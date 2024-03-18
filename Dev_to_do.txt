@@ -1,0 +1,3 @@
+For development:
+
+Code needs to be refactored so that the data being read from the xml is added to a dataframe accessible to the whole script, rather than stored in global variables
