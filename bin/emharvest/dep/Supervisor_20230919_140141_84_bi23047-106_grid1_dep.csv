@@ -1,0 +1,20 @@
+,Value,mmCIF
+Microscope,TITAN52336320,em_imaging.microscope_model
+epuversion,3.0.0-873.0,em_software.version
+date,2023-09-19 14:03:40,em_imaging.date
+eV,300000,em_imaging.accelerating_voltage
+mag,165000,em_imaging.nominal_magnification
+apix,1.1,?
+nominal_defocus_min_microns,-0.5,em_imaging.nominal_defocus_min
+grid_topology,Holey,em_support_film.topology
+grid_material,Carbon,em_support_film.material
+nominal_defocus_max_microns,-2.5,em_imaging.nominal_defocus_max
+spot_size,5,?
+C2_micron,50,em_imaging.c2_aperture_diameter
+Objective_micron,100,?
+Beam_diameter_micron,0.5,?
+collection,AFIS,?
+number_of_images,1,?
+software_name,EPU,em_software.name
+software_category,IMAGE ACQUISITION,em_software.category
+microscope_mode,BrightField,em_imaging.mode

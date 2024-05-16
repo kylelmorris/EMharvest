@@ -1,0 +1,18 @@
+data_Supervisor_20230919_140141_84_bi23047-106_grid1
+
+_em_imaging.microscope_model       TITAN52336320
+_em_imaging.date                   2023-09-19
+_em_imaging.accelerating_voltage   300
+_em_imaging.nominal_magnification  165000
+_em_imaging.nominal_defocus_min    500
+_em_imaging.nominal_defocus_max    2500
+_em_imaging.c2_aperture_diameter   50
+_em_imaging.mode                   "BRIGHT FIELD"
+#
+_em_software.name      EPU
+_em_software.version   3.0.0-873.0
+_em_software.category  "IMAGE ACQUISITION"
+#
+_em_support_film.material  CARBON
+_em_support_film.topology  HOLEY
+##
