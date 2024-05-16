@@ -1,8 +1,0 @@
-LICENSE
-README.md
-setup.py
-emharvest.egg-info/PKG-INFO
-emharvest.egg-info/SOURCES.txt
-emharvest.egg-info/dependency_links.txt
-emharvest.egg-info/requires.txt
-emharvest.egg-info/top_level.txt
