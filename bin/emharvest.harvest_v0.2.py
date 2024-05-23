@@ -679,13 +679,14 @@ def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
     # The values are not always in the same list position in a:KeyValueOfstringanyType
     keyValueList = data["CustomData"]["a:KeyValueOfstringanyType"]
 
+    keyMicroscopeList = data["microscopeData"]["acquisition"]["camera"]["CameraSpecificInput"]["a:KeyValueOfstringanyType"]
+
     # Loop through the list to find the DoseRate list position
     keyvalue = 0
-    detectorName = ""
+    detectorName, detectorMode, counting, superResolution = "", "", "", ""
 
     for i, value in enumerate(keyValueList):
         key = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Key"]
-        avgExposureTime = data["microscopeData"]["acquisition"]["camera"]["ExposureTime"]
 
         if key == "Detectors[BM-Falcon].DoseRate" or key == "Detectors[EF-Falcon].DoseRate":
             keyvalue = i
@@ -693,9 +694,28 @@ def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
         if key == "Detectors[EF-CCD].CommercialName":
             detectorName = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Value"]["#text"]
 
-    # Retrieve the dose rate value
+
+    for i, value in enumerate(keyMicroscopeList):
+        keyMicroscopeData = data["microscopeData"]["acquisition"]["camera"]["CameraSpecificInput"]["a:KeyValueOfstringanyType"][i]["a:Key"]
+        if keyMicroscopeData == "ElectronCountingEnabled":
+            counting = data["microscopeData"]["acquisition"]["camera"]["CameraSpecificInput"]["a:KeyValueOfstringanyType"][i][
+                "a:Value"]["#text"]
+
+        if keyMicroscopeData == "SuperResolutionFactor":
+            superResolution = data["microscopeData"]["acquisition"]["camera"]["CameraSpecificInput"]["a:KeyValueOfstringanyType"][i][
+                "a:Value"]["#text"]
+
+    if counting == "true":
+        if superResolution == "1":
+            detectorMode = "SUPER-RESOULTION"
+        elif superResolution == "2":
+            detectorMode = "COUNTING"
+
+    # Retrieve the values
     xmlDoseRate = data["CustomData"]["a:KeyValueOfstringanyType"][keyvalue]["a:Value"]["#text"]
-    FoilHoleDataDict = dict(xmlDoseRate=xmlDoseRate, detectorName=detectorName, avgExposureTime=avgExposureTime)
+    avgExposureTime = data["microscopeData"]["acquisition"]["camera"]["ExposureTime"]
+
+    FoilHoleDataDict = dict(xmlDoseRate=xmlDoseRate, detectorName=detectorName, avgExposureTime=avgExposureTime, detectorMode=detectorMode)
 
     return FoilHoleDataDict
 
@@ -776,7 +796,8 @@ def deposition_file(xml):
     'microscope_mode': microscope_mode,
     'detector_name': FoilHoleDataDict['detectorName'],
     'dose_rate': FoilHoleDataDict['xmlDoseRate'],
-    'avg_exposure_time': FoilHoleDataDict['avgExposureTime']
+    'avg_exposure_time': FoilHoleDataDict['avgExposureTime'],
+    'detector_mode': FoilHoleDataDict['detectorMode']
     }
     df1 = pd.DataFrame([dictHorizontal1])
 
@@ -803,7 +824,8 @@ def deposition_file(xml):
     "grid_topology": 'em_support_film.topology',
     "detector_name": "em_image_recording.film_or_detector_model",
     "dose_rate": "em_image_recording.avg_electron_dose_per_image",
-    "avg_exposure_time": "em_image_recording.average_exposure_time"
+    "avg_exposure_time": "em_image_recording.average_exposure_time",
+    "detector_mode": "em_image_recording.detector_mode"
     }
     df2 = pd.DataFrame([dictHorizontal2])
 
@@ -986,7 +1008,6 @@ def translate_xml_to_cif(input_data, sessionName):
                     cif_values = ["BRIGHT FIELD"]
             elif category == "topology" or category == "material":
                 cif_values = [cif_values[0].upper()]
-
 
             category_list.append(category)
             cif_values_list.append(cif_values)
