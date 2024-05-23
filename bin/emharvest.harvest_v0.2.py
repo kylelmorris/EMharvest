@@ -669,7 +669,7 @@ def getDefocusRange(data):
        dfMicron = [float(item) * 1e6 for item in df]
        return dfMicron
 
-def xmlDoseRate(xmlpath: Path) -> Dict[str, Any]:
+def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
     # This will fetch the first micrograph xml data
     with open(xmlpath, "r") as xml:
         for_parsing = xml.read()
@@ -681,7 +681,7 @@ def xmlDoseRate(xmlpath: Path) -> Dict[str, Any]:
 
     # Loop through the list to find the DoseRate list position
     keyvalue = 0
-    detector_name = ""
+    detectorName = ""
 
     for i, value in enumerate(keyValueList):
         key = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Key"]
@@ -690,12 +690,13 @@ def xmlDoseRate(xmlpath: Path) -> Dict[str, Any]:
             keyvalue = i
 
         if key == "Detectors[EF-CCD].CommercialName":
-            detector_name = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Value"]["#text"]
+            detectorName = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Value"]["#text"]
 
     # Retrieve the dose rate value
     xmlDoseRate = data["CustomData"]["a:KeyValueOfstringanyType"][keyvalue]["a:Value"]["#text"]
+    FoilHoleDataDict = dict(xmlDoseRate=xmlDoseRate, detectorName=detectorName)
 
-    return xmlDoseRate, detector_name
+    return FoilHoleDataDict
 
 def find_mics(path, search):
     # Need to have an independent function to find the mics, then move into search_mics to sort them out
@@ -749,7 +750,7 @@ def deposition_file(xml):
     grid_toplogy = grid_parts[0]
     grid_material = grid_parts[1]
 
-    xml_dose_rate, detector_name = xmlDoseRate(searchSupervisorData.xmlData)
+    FoilHoleDataDict = FoilHoleData(searchSupervisorData.xmlData)
 
     # Save doppio deposition csv file
     dictHorizontal1 = {
@@ -772,8 +773,8 @@ def deposition_file(xml):
     'software_name': "EPU",
     'software_category': "IMAGE ACQUISITION",
     'microscope_mode': microscope_mode,
-    'detector_name': detector_name,
-    'dose_rate': xml_dose_rate
+    'detector_name': FoilHoleDataDict['detectorName'],
+    'dose_rate': FoilHoleDataDict['xmlDoseRate']
     }
     df1 = pd.DataFrame([dictHorizontal1])
 
@@ -838,7 +839,7 @@ def deposition_file(xml):
     # transalating and writting to cif file
     print("CIF_DICTIONARY", cif_dict)
     translate_xml_to_cif(cif_dict, main.sessionName)
-    xmlDoseRate(searchSupervisorData.xmlData)
+    FoilHoleData(searchSupervisorData.xmlData)
 
 def df_lookup(df, column):
     """
