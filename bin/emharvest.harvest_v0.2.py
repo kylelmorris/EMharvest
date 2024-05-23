@@ -718,8 +718,9 @@ def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
     xmlDoseRate = data["CustomData"]["a:KeyValueOfstringanyType"][keyvalue]["a:Value"]["#text"]
     avgExposureTime = data["microscopeData"]["acquisition"]["camera"]["ExposureTime"]
     energyWindow = data["microscopeData"]["optics"]["EnergyFilter"]["EnergySelectionSlitWidth"]
+    electronSource = data["microscopeData"]["gun"]["Sourcetype"]
 
-    FoilHoleDataDict = dict(xmlDoseRate=xmlDoseRate, detectorName=detectorName, avgExposureTime=avgExposureTime, detectorMode=detectorMode, energyWindow=energyWindow)
+    FoilHoleDataDict = dict(xmlDoseRate=xmlDoseRate, detectorName=detectorName, avgExposureTime=avgExposureTime, detectorMode=detectorMode, energyWindow=energyWindow, electronSource=electronSource)
 
     return FoilHoleDataDict
 
@@ -802,7 +803,8 @@ def deposition_file(xml):
     'dose_rate': FoilHoleDataDict['xmlDoseRate'],
     'avg_exposure_time': FoilHoleDataDict['avgExposureTime'],
     'detector_mode': FoilHoleDataDict['detectorMode'],
-    'energy_window': FoilHoleDataDict['energyWindow']
+    'energy_window': FoilHoleDataDict['energyWindow'],
+    'electron_source': FoilHoleDataDict['electronSource']
     }
     df1 = pd.DataFrame([dictHorizontal1])
 
@@ -831,7 +833,8 @@ def deposition_file(xml):
     "dose_rate": "em_image_recording.avg_electron_dose_per_image",
     "avg_exposure_time": "em_image_recording.average_exposure_time",
     "detector_mode": "em_image_recording.detector_mode",
-    "energy_window": "em_imaging.energy_window"
+    "energy_window": "em_imaging.energy_window",
+    "electron_source": "em_imaging.electron_source"
     }
     df2 = pd.DataFrame([dictHorizontal2])
 
@@ -1014,6 +1017,9 @@ def translate_xml_to_cif(input_data, sessionName):
                     cif_values = ["BRIGHT FIELD"]
             elif category == "topology" or category == "material":
                 cif_values = [cif_values[0].upper()]
+            elif category == "electron_source":
+                if cif_values[0] == "FieldEmission":
+                    cif_values = ["FIELD EMISSION GUN"]
 
             category_list.append(category)
             cif_values_list.append(cif_values)
