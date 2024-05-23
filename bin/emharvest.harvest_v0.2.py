@@ -680,17 +680,22 @@ def xmlDoseRate(xmlpath: Path) -> Dict[str, Any]:
     keyValueList = data["CustomData"]["a:KeyValueOfstringanyType"]
 
     # Loop through the list to find the DoseRate list position
-    i = 0
-    for value in keyValueList:
-       key = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Key"]
-       # Krios III has EF selectris falcon, Glacios II has standard Falcon no energy filter, BM is base model?
-       if key == "Detectors[BM-Falcon].DoseRate" or key == "Detectors[EF-Falcon].DoseRate":
-          keyvalue = i
-       i = i+1
+    keyvalue = 0
+    detector_name = ""
 
+    for i, value in enumerate(keyValueList):
+        key = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Key"]
+
+        if key == "Detectors[BM-Falcon].DoseRate" or key == "Detectors[EF-Falcon].DoseRate":
+            keyvalue = i
+
+        if key == "Detectors[EF-CCD].CommercialName":
+            detector_name = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Value"]["#text"]
+
+    # Retrieve the dose rate value
     xmlDoseRate = data["CustomData"]["a:KeyValueOfstringanyType"][keyvalue]["a:Value"]["#text"]
 
-    return xmlDoseRate
+    return xmlDoseRate, detector_name
 
 def find_mics(path, search):
     # Need to have an independent function to find the mics, then move into search_mics to sort them out
@@ -744,6 +749,8 @@ def deposition_file(xml):
     grid_toplogy = grid_parts[0]
     grid_material = grid_parts[1]
 
+    xml_dose_rate, detector_name = xmlDoseRate(searchSupervisorData.xmlData)
+
     # Save doppio deposition csv file
     dictHorizontal1 = {
     'Microscope': model,
@@ -764,7 +771,9 @@ def deposition_file(xml):
     'number_of_images': main.mic_count,
     'software_name': "EPU",
     'software_category': "IMAGE ACQUISITION",
-    'microscope_mode': microscope_mode
+    'microscope_mode': microscope_mode,
+    'detector_name': detector_name,
+    'dose_rate': xml_dose_rate
     }
     df1 = pd.DataFrame([dictHorizontal1])
 
@@ -788,7 +797,9 @@ def deposition_file(xml):
     'number_of_images': '?',
     "microscope_mode": 'em_imaging.mode',
     "grid_material": 'em_support_film.material',
-    "grid_topology": 'em_support_film.topology'
+    "grid_topology": 'em_support_film.topology',
+    "detector_name": "em_image_recording.film_or_detector_model",
+    "dose_rate": "em_image_recording.avg_electron_dose_per_image"
     }
     df2 = pd.DataFrame([dictHorizontal2])
 
@@ -827,6 +838,7 @@ def deposition_file(xml):
     # transalating and writting to cif file
     print("CIF_DICTIONARY", cif_dict)
     translate_xml_to_cif(cif_dict, main.sessionName)
+    xmlDoseRate(searchSupervisorData.xmlData)
 
 def df_lookup(df, column):
     """
