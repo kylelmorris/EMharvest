@@ -685,6 +685,7 @@ def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
 
     for i, value in enumerate(keyValueList):
         key = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Key"]
+        avgExposureTime = data["microscopeData"]["acquisition"]["camera"]["ExposureTime"]
 
         if key == "Detectors[BM-Falcon].DoseRate" or key == "Detectors[EF-Falcon].DoseRate":
             keyvalue = i
@@ -694,7 +695,7 @@ def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
 
     # Retrieve the dose rate value
     xmlDoseRate = data["CustomData"]["a:KeyValueOfstringanyType"][keyvalue]["a:Value"]["#text"]
-    FoilHoleDataDict = dict(xmlDoseRate=xmlDoseRate, detectorName=detectorName)
+    FoilHoleDataDict = dict(xmlDoseRate=xmlDoseRate, detectorName=detectorName, avgExposureTime=avgExposureTime)
 
     return FoilHoleDataDict
 
@@ -774,7 +775,8 @@ def deposition_file(xml):
     'software_category': "IMAGE ACQUISITION",
     'microscope_mode': microscope_mode,
     'detector_name': FoilHoleDataDict['detectorName'],
-    'dose_rate': FoilHoleDataDict['xmlDoseRate']
+    'dose_rate': FoilHoleDataDict['xmlDoseRate'],
+    'avg_exposure_time': FoilHoleDataDict['avgExposureTime']
     }
     df1 = pd.DataFrame([dictHorizontal1])
 
@@ -800,7 +802,8 @@ def deposition_file(xml):
     "grid_material": 'em_support_film.material',
     "grid_topology": 'em_support_film.topology',
     "detector_name": "em_image_recording.film_or_detector_model",
-    "dose_rate": "em_image_recording.avg_electron_dose_per_image"
+    "dose_rate": "em_image_recording.avg_electron_dose_per_image",
+    "avg_exposure_time": "em_image_recording.average_exposure_time"
     }
     df2 = pd.DataFrame([dictHorizontal2])
 
@@ -839,6 +842,7 @@ def deposition_file(xml):
     # transalating and writting to cif file
     print("CIF_DICTIONARY", cif_dict)
     translate_xml_to_cif(cif_dict, main.sessionName)
+
     FoilHoleData(searchSupervisorData.xmlData)
 
 def df_lookup(df, column):
