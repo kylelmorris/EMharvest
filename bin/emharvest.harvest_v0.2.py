@@ -853,6 +853,8 @@ def deposition_file(xml):
     df_transpose = df.T
     # Set headings
     df_transpose.columns = headings
+    # Set the name of the index
+    df_transpose.index.name = 'Items'
     df_transpose.to_csv(main.dep_dir+'/'+main.sessionName+'_dep.csv', index = True, header=True)
 
     df1_selected = df1.applymap(lambda x: x.item() if isinstance(x, (np.generic, np.ndarray)) else x)
