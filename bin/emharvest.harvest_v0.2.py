@@ -855,8 +855,26 @@ def deposition_file(xml):
     df_transpose.columns = headings
     df_transpose.to_csv(main.dep_dir+'/'+main.sessionName+'_dep.csv', index = True, header=True)
 
-    # Computer readable deposition file
-    df_transpose.to_json(depfilepath, index = True)
+    df1_selected = df1.applymap(lambda x: x.item() if isinstance(x, (np.generic, np.ndarray)) else x)
+
+    # Create nested dictionary from the DataFrame
+    nested_dict = {}
+    for col, new_col in dictHorizontal2.items():
+        if '?' not in new_col and col in df1_selected.columns:
+            top_key, sub_key = new_col.split('.')
+            if top_key not in nested_dict:
+                nested_dict[top_key] = {}
+            nested_dict[top_key][sub_key] = df1.at[0, col]
+
+    # Convert nested dictionary to JSON
+    json_output = json.dumps(nested_dict, indent=4, default=str)
+
+    #write to json file
+    with open(depfilepath, 'w') as f:
+        f.write(json_output)
+
+    # Print or save JSON
+   # print(json_output)
 
     # This can be run before doing full analysis of the session directories
     print("Created deposition file")
