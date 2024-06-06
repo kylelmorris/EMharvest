@@ -725,8 +725,10 @@ def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
     else:
         slitWidth = "?"
     electronSource = data["microscopeData"]["gun"]["Sourcetype"]
+    tiltAngleMin = round(float(data["microscopeData"]["stage"]["Position"]["A"] )* (180 / math.pi), 5)
+    tiltAngleMax = round(float(data["microscopeData"]["stage"]["Position"]["B"] )* (180 / math.pi), 5)
 
-    FoilHoleDataDict = dict(xmlDoseRate=xmlDoseRate, detectorName=detectorName, avgExposureTime=avgExposureTime, detectorMode=detectorMode, slitWidth=slitWidth, electronSource=electronSource)
+    FoilHoleDataDict = dict(xmlDoseRate=xmlDoseRate, detectorName=detectorName, avgExposureTime=avgExposureTime, detectorMode=detectorMode, slitWidth=slitWidth, electronSource=electronSource, tiltAngleMin=tiltAngleMin, tiltAngleMax=tiltAngleMax)
 
     return FoilHoleDataDict
 
@@ -810,7 +812,9 @@ def deposition_file(xml):
     'avg_exposure_time': FoilHoleDataDict['avgExposureTime'],
     'detector_mode': FoilHoleDataDict['detectorMode'],
     'slit_width': FoilHoleDataDict['slitWidth'],
-    'electron_source': FoilHoleDataDict['electronSource']
+    'electron_source': FoilHoleDataDict['electronSource'],
+    'tilt_angle_min': FoilHoleDataDict['tiltAngleMin'],
+    'tilt_angle_max': FoilHoleDataDict['tiltAngleMax']
     }
     df1 = pd.DataFrame([dictHorizontal1])
 
@@ -840,7 +844,9 @@ def deposition_file(xml):
     "avg_exposure_time": "em_image_recording.average_exposure_time",
     "detector_mode": "em_image_recording.detector_mode",
     "slit_width": "em_imaging_optics.energyfilter_slit_width",
-    "electron_source": "em_imaging.electron_source"
+    "electron_source": "em_imaging.electron_source",
+    "tilt_angle_min": "em_imaging.tilt_angle_min",
+    "tilt_angle_max": "em_imaging.tilt_angle_max"
     }
     df2 = pd.DataFrame([dictHorizontal2])
 
