@@ -715,9 +715,15 @@ def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
             detectorMode = "COUNTING"
 
     # Retrieve the values
-    xmlDoseRate = data["CustomData"]["a:KeyValueOfstringanyType"][keyvalue]["a:Value"]["#text"]
+    # xmlDoseRate = data["CustomData"]["a:KeyValueOfstringanyType"][keyvalue]["a:Value"]["#text"]
+    xmlDoseRate = "?"  # the data file has only electron_dose on camera and not the dose used on the specimen
     avgExposureTime = data["microscopeData"]["acquisition"]["camera"]["ExposureTime"]
-    slitWidth = data["microscopeData"]["optics"]["EnergyFilter"]["EnergySelectionSlitWidth"]
+    slitWid = data["microscopeData"]["optics"]["EnergyFilter"]["EnergySelectionSlitWidth"]
+    slitInserted = data["microscopeData"]["optics"]["EnergyFilter"]["EnergySelectionSlitInserted"]
+    if slitInserted == "true":
+        slitWidth = slitWid
+    else:
+        slitWidth = "?"
     electronSource = data["microscopeData"]["gun"]["Sourcetype"]
 
     FoilHoleDataDict = dict(xmlDoseRate=xmlDoseRate, detectorName=detectorName, avgExposureTime=avgExposureTime, detectorMode=detectorMode, slitWidth=slitWidth, electronSource=electronSource)
