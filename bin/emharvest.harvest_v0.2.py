@@ -861,14 +861,18 @@ def deposition_file(xml):
     # Human readable deposition file
     #df.to_csv (main.dep_dir+'/'+sessionName+'.dep', index = False, header=True)
     # Manual headings
-    headings = ['Value', 'mmCIF']
+    headings = ['Value', 'JSON', 'mmCIF']
+    # Duplicate the last row
+    last_row = df.iloc[-1]
+    df = df.append(last_row, ignore_index=True)
+    # Transpose
     df_transpose = df.T
     # Set headings
     df_transpose.columns = headings
     # Set the name of the index
     df_transpose.index.name = 'Items'
     # add square brackets around keys
-    df_transpose['mmCIF'] = df_transpose['mmCIF'].apply(lambda x: '[' + x.replace('.', '][') + ']')
+    df_transpose['JSON'] = df_transpose['JSON'].apply(lambda x: '[' + x.replace('.', '][') + ']')
     # Save to CSV
     df_transpose.to_csv(main.dep_dir + '/' + main.sessionName + '_dep.csv', index=True, header=True)
 
