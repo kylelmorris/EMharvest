@@ -863,12 +863,50 @@ def deposition_file(xml):
     # Manual headings
     headings = ['Value', 'JSON', 'mmCIF']
     # Duplicate the last row
-    last_row = df.iloc[-1]
-    df = df.append(last_row, ignore_index=True)
+    mmcif_name = df.iloc[-1]
+    # Append to DF
+    df = df.append(mmcif_name, ignore_index=True)
+
+    xml_path_list = [
+        '[MicroscopeImage][microscopeData][instruments][InstrumentModel]',
+        '[MicroscopeImage][microscopeData][core][ApplicationSoftware]',
+        '[MicroscopeImage][microscopeData][acquisitionDateTime]',
+        '[MicroscopeImage][microscopeData][gun][AccelerationVoltage]',
+        '[MicroscopeImage][microscopeData][optics][TemMagnification][NominalMagnification]',
+        '[MicroscopeImage][SpatialScale][pixelSize][x][numericValue]',
+        '[MicroscopeImage][microscopeData][optics][TemMagnification][NominalMagnification]',
+        '[Samples][_items][SampleXml][0][GridType]',
+        '[Samples][_items][SampleXml][0][GridType]',
+        '[MicroscopeImage][microscopeData][optics][Defocus]',
+        '[MicroscopeImage][microscopeData][optics][SpotIndex]',
+        '[MicroscopyImage][CustomData][a:KeyValueOfstringanyType][a:Key] is Aperture[C2].Name then extract [<a:Value>]',
+        '[MicroscopyImage][CustomData][a:KeyValueOfstringanyType][a:Key] is Aperture[OBJ].Name then extract [<a:Value>]',
+        '[MicroscopeImage][microscopeData][optics][BeamDiameter]',
+        '?',
+        '?',
+        '[MicroscopeImage][microscopeData][core][ApplicationSoftwareVersion]',
+        'PREDEFINED VALUE',
+        '[MicroscopeImage][microscopeData][optics][ColumnOperatingTemSubMode]',
+        '[MicroscopyImage][CustomData][a:KeyValueOfstringanyType][a:Key] isDetectorCommercialName then extract [<a:Value>]',
+        '?',
+        '[MicroscopeImage][microscopeData][acquisition][camera][ExposureTime]',
+        '[MicroscopeImage][microscopeData][acquisition][camera][CameraSpecificInput][a:KeyValueOfstringanyType][a:Key] is ElectronCountingEnabled and [<a:Vallue>] is true then COUNTING',
+        '[MicroscopeImage][microscopeData][optics][][EnergyFilter][EnergySelectionSlitWidth]',
+        '[MicroscopeImage][microscopeData][gun][Sourcetype]',
+        '[MicroscopeImage][microscopeData][stage][Position][A]',
+        '[MicroscopeImage][microscopeData][stage][Position][B]'
+    ]
+
+
+
     # Transpose
     df_transpose = df.T
     # Set headings
     df_transpose.columns = headings
+    # Add XML paths
+    if len(xml_path_list) != len(df_transpose):
+        raise ValueError("Length of xml_path_list must match the number of rows in the DataFrame")
+    df_transpose['XML Path'] = xml_path_list
     # Set the name of the index
     df_transpose.index.name = 'Items'
     # add square brackets around keys
