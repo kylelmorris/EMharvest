@@ -867,7 +867,7 @@ def deposition_file(xml):
     # Append to DF
     df = df.append(mmcif_name, ignore_index=True)
 
-    xml_path_list = [
+    tfs_xml_path_list = [
         '[MicroscopeImage][microscopeData][instruments][InstrumentModel]',
         '[MicroscopeImage][microscopeData][core][ApplicationSoftware]',
         '[MicroscopeImage][microscopeData][acquisitionDateTime]',
@@ -897,16 +897,47 @@ def deposition_file(xml):
         '[MicroscopeImage][microscopeData][stage][Position][B]'
     ]
 
-
+    emdb_xml_path_list = [
+        '[emd][structure_determination_list][structure_determination][microscopy_list]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][software_list][software][version]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][date]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][acceleration_voltage]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][nominal_magnification]',
+        '?',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][nominal_defocus_min]',
+        '[emd][structure_determination_list][structure_determination][specimen_preparation_list][single_particle_preparation][grid][support_film][film_topolgy]',
+        '[emd][structure_determination_list][structure_determination][specimen_preparation_list][single_particle_preparation][grid][support_film][film_material]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][nominal_defocus_max]',
+        '?',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][c2_aperture_diameter]',
+        '?',
+        '?',
+        '?',
+        '?',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][software_list][software][name]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][imaging_mode]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][image_recording_list][image_recording][film_or_detector_model]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][image_recording_list][image_recording][average_electron_dose_per_image]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][image_recording_list][image_recording][average_exposure_time]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][image_recording_list][image_recording][detector_mode]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][specialist_optics][energyfilter][slith_width]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][electron_source]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][tilt_angle_min]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][tilt_angle_max]'
+        ]
 
     # Transpose
     df_transpose = df.T
     # Set headings
     df_transpose.columns = headings
     # Add XML paths
-    if len(xml_path_list) != len(df_transpose):
-        raise ValueError("Length of xml_path_list must match the number of rows in the DataFrame")
-    df_transpose['XML Path'] = xml_path_list
+    if len(tfs_xml_path_list) != len(df_transpose):
+        raise ValueError("Length of tfs_xml_path_list must match the number of rows in the DataFrame")
+    df_transpose['TFS XML Path'] = tfs_xml_path_list
+    if len(emdb_xml_path_list) != len(df_transpose):
+        raise ValueError("Length of emdb_xml_path_list must match the number of rows in the DataFrame")
+    df_transpose['EMDB XML Path'] = emdb_xml_path_list
     # Set the name of the index
     df_transpose.index.name = 'Items'
     # add square brackets around keys
