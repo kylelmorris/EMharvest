@@ -24,31 +24,77 @@ from mmcif.api.DataCategory import DataCategory
 from mmcif.api.PdbxContainers import DataContainer
 from mmcif.io.PdbxWriter import PdbxWriter
 
-parser = argparse.ArgumentParser(description="Microscopy Data harvest Script")
-parser.add_argument("-e", "--epu", help="EPU session file: Session.dm")
-parser.add_argument("-a", "--atlas", help="Atlas session file: ScreeningSession.dm")
+prog = "EM HARVEST"
+usage = """
+        Harvesting microscopy data for automatic depostion.
+        Example:
+        For single particle data usage is:
+        python emharvest.harvest.py -m SPA -e ../_repo_data/Supervisor_20230919_140141_84_bi23047-106_grid1/EpuSession.dm -a ../_repo_data/atlas/Supervisor_20230919_115905_Atlas_bi23047-106/ScreeningSession.dm  -o ../_repo_data/
+        or for tomogram data usage is:
+        python emharvest.harvest.py -m TOMO -t ../_repo_data/tomo_data/SearchMaps/Overview.xml -o ../_repo_data/
+        """
+
+parser = argparse.ArgumentParser(description="Microscopy Data Harvest Script")
+parser.add_argument("-m", "--mode", choices=["SPA", "TOMO"], required=True,
+                    help="Mode: SPA for Single Particle Analysis or TOMO for Tomography")
+parser.add_argument("-e", "--epu", help="EPU session file: Session.dm (Required for SPA mode)")
+parser.add_argument("-a", "--atlas", help="Atlas session file: ScreeningSession.dm (Required for SPA mode)")
 parser.add_argument("-o", "--output", help="Output directory for generated reports")
 parser.add_argument("-p", "--print", help="Optional: Y = Only print xml and exit")
+parser.add_argument("-t", "--tomogram_file", help="Tomogram file (Required for TOMO mode)")
 args = parser.parse_args()
 
+
 def main():
-    main.epu_xml = args.epu
-    main.epu_directory = os.path.dirname(args.epu)
+    if args.mode == "SPA":
+        if not args.epu or not args.atlas:
+            parser.error("SPA mode requires both --epu and --atlas files.")
 
-    if args.print:
-        print_epu_xml(main.epu_xml)
-        exit(1)
+        main.epu_xml = args.epu
+        main.epu_directory = os.path.dirname(args.epu)
 
-    main.atlas_xml = args.atlas
-    main.atlas_directory = os.path.dirname(args.atlas)
+        if args.print:
+            print_epu_xml(main.epu_xml)
+            exit(1)
 
-    output_dir = os.path.join(os.getcwd(), "emharvest")
-    main.dep_dir = os.path.join(output_dir, "dep")
+        main.atlas_xml = args.atlas
+        main.atlas_directory = os.path.dirname(args.atlas)
 
-    if not os.path.exists(main.dep_dir):
-        os.makedirs(main.dep_dir)
+        output_dir = os.path.join(os.getcwd(), "emharvest")
+        main.dep_dir = os.path.join(output_dir, "dep")
 
-    perform_minimal_harvest(main.epu_xml, output_dir)
+        if not os.path.exists(main.dep_dir):
+            os.makedirs(main.dep_dir)
+
+        perform_minimal_harvest(main.epu_xml, output_dir)
+
+    elif args.mode == "TOMO":
+        if not args.tomogram_file:
+            parser.error("TOMO mode requires --tomogram_file.")
+
+        # Implement TOMO-specific functionality here
+        tomogram_file = args.tomogram_file
+        output_dir = os.path.join(os.getcwd(), "emharvest")
+        main.dep_dir = os.path.join(output_dir, "dep_tomo")
+
+        if not os.path.exists(main.dep_dir):
+            os.makedirs(main.dep_dir)
+
+        perform_tomogram_harvest(tomogram_file, output_dir)
+
+
+def perform_tomogram_harvest(tomogram_file, output_dir):
+    print(f"Processing tomogram data from file: {tomogram_file}")
+    print(f"Output will be saved to: {output_dir}/dep_tomo")
+
+    TomoDataDict = FoilHoleData(tomogram_file)
+    main_sessionName = TomoDataDict["sessionName"]
+
+    EpuDataDict = dict(main_sessionName=main_sessionName, xmlMag="?", xmlMetrePix="?", xmlAPix="?", model="?", eV="?", microscope_mode="?", grid_topology="?", grid_material="?",
+                       software_name="?", epuVersion="?", date="?", nominal_defocus_min_microns="?", nominal_defocus_max_microns="?",
+                       collection="?", number_of_images="?", spot_size="?", C2_micron="?", Objective_micron="?", Beam_diameter_micron="?")
+
+    save_deposition_file(EpuDataDict, TomoDataDict)
 
 def findpattern(pattern, path):
     result = []
@@ -453,8 +499,6 @@ def getStageTilt(micpath: Path) -> Dict[str, Any]:
 
     return [stageAlpha, stageBeta]
 
-import pandas as pd
-
 def xml_session(xml_path: Path) -> pd.DataFrame:
     data_dict = {}
     with open(xml_path, "r") as xml:
@@ -676,6 +720,8 @@ def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
         data = xmltodict.parse(for_parsing)
     data = data["MicroscopeImage"]
 
+    sessionName = data["uniqueID"]
+
     # The values are not always in the same list position in a:KeyValueOfstringanyType
     keyValueList = data["CustomData"]["a:KeyValueOfstringanyType"]
 
@@ -684,6 +730,10 @@ def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
     # Loop through the list to find the DoseRate list position
     keyvalue = 0
     detectorName, detectorMode, counting, superResolution, objectiveAperture = "", "", "", "", ""
+    detector_keys = [
+        "Detectors[EF-CCD].CommercialName",
+        "Detectors[EF-Falcon].CommercialName"
+    ]
 
     for i, value in enumerate(keyValueList):
         key = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Key"]
@@ -691,7 +741,7 @@ def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
         if key == "Detectors[BM-Falcon].DoseRate" or key == "Detectors[EF-Falcon].DoseRate":
             keyvalue = i
 
-        if key == "Detectors[EF-CCD].CommercialName":
+        if key in detector_keys:
             detectorName = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Value"]["#text"]
 
         if key == "Aperture[OBJ].Name":
@@ -728,7 +778,7 @@ def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
     tiltAngleMin = round(float(data["microscopeData"]["stage"]["Position"]["A"] )* (180 / math.pi), 5)
     tiltAngleMax = round(float(data["microscopeData"]["stage"]["Position"]["B"] )* (180 / math.pi), 5)
 
-    FoilHoleDataDict = dict(xmlDoseRate=xmlDoseRate, detectorName=detectorName, avgExposureTime=avgExposureTime, detectorMode=detectorMode, slitWidth=slitWidth, electronSource=electronSource, tiltAngleMin=tiltAngleMin, tiltAngleMax=tiltAngleMax)
+    FoilHoleDataDict = dict(sessionName=sessionName, xmlDoseRate=xmlDoseRate, detectorName=detectorName, avgExposureTime=avgExposureTime, detectorMode=detectorMode, slitWidth=slitWidth, electronSource=electronSource, tiltAngleMin=tiltAngleMin, tiltAngleMax=tiltAngleMax)
 
     return FoilHoleDataDict
 
@@ -760,10 +810,20 @@ def find_mics(path, search):
 def deposition_file(xml):
 
     # Get EPU session name from main EPU xml file, this is a function
-    main.sessionName = xml_sessionName(xml)
+    main_sessionName = xml_sessionName(xml)
 
     # This is the data xml metadata file already in a dictionary
     data = searchSupervisorData.xmlDataDict["MicroscopeImage"]
+    epuVersion = df_lookup(main.masterdf, 'epuVersion')
+    date = df_lookup(main.masterdf, 'sessionDate').strftime("%Y-%m-%d %H:%M:%S")
+    nominal_defocus_min_microns = df_lookup(main.masterdf, 'defocusMin')
+    nominal_defocus_max_microns = df_lookup(main.masterdf, 'defocusMax')
+    collection = df_lookup(main.masterdf, 'afisMode')
+    number_of_images = main.mic_count
+    spot_size = xml_presets.spot
+    C2_micron = xml_presets.C2
+    Objective_micron = str(xml_presets_data.objective)
+    Beam_diameter_micron = xml_presets.beamD
 
     # Get mag
     xmlMag = data["microscopeData"]["optics"]["TemMagnification"]["NominalMagnification"]
@@ -781,32 +841,39 @@ def deposition_file(xml):
     grid_parts = re.findall(r'[A-Z][a-z]*', grid_type)
 
     # Now, parts will be ['Holey', 'Carbon']
-    grid_toplogy = grid_parts[0]
+    grid_topology = grid_parts[0]
     grid_material = grid_parts[1]
+    EpuDataDict = dict(main_sessionName=main_sessionName, xmlMag= xmlMag, xmlMetrePix=xmlMetrePix, xmlAPix=xmlAPix, model=model, eV=eV, microscope_mode=microscope_mode, grid_topology=grid_topology, grid_material=grid_material,
+                       software_name="EPU", epuVersion=epuVersion, date=date, nominal_defocus_min_microns=nominal_defocus_min_microns, nominal_defocus_max_microns=nominal_defocus_max_microns,
+                       collection=collection, number_of_images=number_of_images, spot_size=spot_size, C2_micron=C2_micron, Objective_micron=Objective_micron, Beam_diameter_micron=Beam_diameter_micron)
 
     FoilHoleDataDict = FoilHoleData(searchSupervisorData.xmlData)
 
+    save_deposition_file(EpuDataDict, FoilHoleDataDict)
+
+
+def save_deposition_file(EpuDataDict, FoilHoleDataDict):
     # Save doppio deposition csv file
     dictHorizontal1 = {
-    'Microscope': model,
-    'epuversion': df_lookup(main.masterdf, 'epuVersion'),
-    'date': df_lookup(main.masterdf, 'sessionDate').strftime("%Y-%m-%d %H:%M:%S"),
-    'eV': eV,
-    'mag': xmlMag,
-    'apix': str(xmlAPix),
-    'nominal_defocus_min_microns': df_lookup(main.masterdf, 'defocusMin'),
-    'grid_topology': grid_toplogy,
-    'grid_material': grid_material,
-    'nominal_defocus_max_microns': df_lookup(main.masterdf, 'defocusMax'),
-    'spot_size': xml_presets.spot,
-    'C2_micron': xml_presets.C2,
-    'Objective_micron': str(xml_presets_data.objective),
-    'Beam_diameter_micron': xml_presets.beamD,
-    'collection': df_lookup(main.masterdf, 'afisMode'),
-    'number_of_images': main.mic_count,
-    'software_name': "EPU",
+    'Microscope': EpuDataDict['model'],
+    'epuversion': EpuDataDict['epuVersion'],
+    'date': EpuDataDict['date'],
+    'eV': EpuDataDict['eV'],
+    'mag': EpuDataDict['xmlMag'],
+    'apix': EpuDataDict['xmlAPix'],
+    'nominal_defocus_min_microns': EpuDataDict['nominal_defocus_min_microns'],
+    'grid_topology': EpuDataDict['grid_topology'],
+    'grid_material': EpuDataDict['grid_material'],
+    'nominal_defocus_max_microns': EpuDataDict['nominal_defocus_max_microns'],
+    'spot_size': EpuDataDict['spot_size'],
+    'C2_micron': EpuDataDict['C2_micron'],
+    'Objective_micron': EpuDataDict['Objective_micron'],
+    'Beam_diameter_micron': EpuDataDict['Beam_diameter_micron'],
+    'collection': EpuDataDict['collection'],
+    'number_of_images': EpuDataDict['number_of_images'],
+    'software_name': EpuDataDict["software_name"],
     'software_category': "IMAGE ACQUISITION",
-    'microscope_mode': microscope_mode,
+    'microscope_mode': EpuDataDict['microscope_mode'],
     'detector_name': FoilHoleDataDict['detectorName'],
     'dose_rate': FoilHoleDataDict['xmlDoseRate'],
     'avg_exposure_time': FoilHoleDataDict['avgExposureTime'],
@@ -855,8 +922,8 @@ def deposition_file(xml):
     #df = df1.merge(df2, left_index=0, right_index=0)
 
     ## Deposition file
-    depfilepath = main.dep_dir+'/'+main.sessionName+'_dep.json'
-    checksumpath = main.dep_dir+'/'+main.sessionName+'_dep.checksum'
+    depfilepath = main.dep_dir+'/'+EpuDataDict['main_sessionName']+'_dep.json'
+    checksumpath = main.dep_dir+'/'+EpuDataDict['main_sessionName']+'_dep.checksum'
 
     # Human readable deposition file
     #df.to_csv (main.dep_dir+'/'+sessionName+'.dep', index = False, header=True)
@@ -943,7 +1010,7 @@ def deposition_file(xml):
     # add square brackets around keys
     df_transpose['JSON'] = df_transpose['JSON'].apply(lambda x: '[' + x.replace('.', '][') + ']')
     # Save to CSV
-    df_transpose.to_csv(main.dep_dir + '/' + main.sessionName + '_dep.csv', index=True, header=True)
+    df_transpose.to_csv(main.dep_dir + '/' + EpuDataDict['main_sessionName'] + '_dep.csv', index=True, header=True)
 
     df1_selected = df1.applymap(lambda x: x.item() if isinstance(x, (np.generic, np.ndarray)) else x)
 
@@ -963,9 +1030,6 @@ def deposition_file(xml):
     with open(depfilepath, 'w') as f:
         f.write(json_output)
 
-    # Print or save JSON
-   # print(json_output)
-
     # This can be run before doing full analysis of the session directories
     print("Created deposition file")
 
@@ -980,9 +1044,8 @@ def deposition_file(xml):
 
     # transalating and writting to cif file
     print("CIF_DICTIONARY", cif_dict)
-    translate_xml_to_cif(cif_dict, main.sessionName)
+    translate_xml_to_cif(cif_dict, EpuDataDict['main_sessionName'])
 
-    FoilHoleData(searchSupervisorData.xmlData)
 
 def df_lookup(df, column):
     """
@@ -1034,13 +1097,13 @@ def perform_minimal_harvest(xml_path, output_dir):
     # Create a deposition file
     deposition_file(xml_path)
 
-def write_mmcif_file(data_list):
+def write_mmcif_file(data_list, sessionName):
     """
     pdbx writer is used to write data stored in self.__dataList
     :return written: a boolean; True when pdf writer is finished
     """
     written = False
-    depfilepath = main.dep_dir + '/' + main.sessionName
+    depfilepath = main.dep_dir + '/' + sessionName
     if depfilepath:
         mmcif_filename = depfilepath + '_dep.cif'
         with open(mmcif_filename, "w") as cfile:
@@ -1115,11 +1178,14 @@ def translate_xml_to_cif(input_data, sessionName):
             if category == "date":
                 cif_values = [cif_values[0].split(" ")[0]]
             elif category == "accelerating_voltage":
-                cif_values = [int(float(cif_values[0]) / 1000)]
+                if cif_values[0] != "?":
+                    cif_values = [int(float(cif_values[0]) / 1000)]
             elif category == "nominal_defocus_min":
-                cif_values = [int((cif_values[0]) * -1000)]
+                if cif_values[0] != "?":
+                    cif_values = [int((cif_values[0]) * -1000)]
             elif category == "nominal_defocus_max":
-                cif_values = [int((cif_values[0]) * -1000)]
+                if cif_values[0] != "?":
+                    cif_values = [int((cif_values[0]) * -1000)]
             elif category == "mode":
                 if cif_values[0] == "BrightField":
                     cif_values = ["BRIGHT FIELD"]
@@ -1135,7 +1201,7 @@ def translate_xml_to_cif(input_data, sessionName):
         insert_data(container, category_name, cif_values_list)
 
     # Write the modified CIF data to a file
-    return write_mmcif_file(cif_data_list)
+    return write_mmcif_file(cif_data_list, sessionName)
 
 
 main()
