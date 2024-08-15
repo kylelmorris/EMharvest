@@ -87,14 +87,21 @@ def perform_tomogram_harvest(tomogram_file, output_dir):
     print(f"Processing tomogram data from file: {tomogram_file}")
     print(f"Output will be saved to: {output_dir}/dep_tomo")
 
-    TomoDataDict = FoilHoleData(tomogram_file)
-    main_sessionName = TomoDataDict["sessionName"]
+    FoilDataDict = FoilHoleData(tomogram_file)
+    main_sessionName = FoilDataDict["sessionName"]
+    EpuDataDict = dict(main_sessionName=main_sessionName, xmlMag="?", xmlMetrePix="?", xmlAPix="?", eV="?",
+                       grid_topology="?", grid_material="?",
+                       software_name="?", epuVersion="?", nominal_defocus_min_microns="?",
+                       nominal_defocus_max_microns="?",
+                       collection="?", number_of_images="?", spot_size="?", C2_micron="?", Objective_micron="?",
+                       Beam_diameter_micron="?")
+    TomoDataDict = {**FoilDataDict, **EpuDataDict}
 
-    EpuDataDict = dict(main_sessionName=main_sessionName, xmlMag="?", xmlMetrePix="?", xmlAPix="?", model="?", eV="?", microscope_mode="?", grid_topology="?", grid_material="?",
-                       software_name="?", epuVersion="?", date="?", nominal_defocus_min_microns="?", nominal_defocus_max_microns="?",
-                       collection="?", number_of_images="?", spot_size="?", C2_micron="?", Objective_micron="?", Beam_diameter_micron="?")
+    OverViewDataDict = TomoOverViewData(tomogram_file)
+    CompleteTomoDataDict = {**TomoDataDict, **OverViewDataDict}
+    print("COMPFDSF", CompleteTomoDataDict)
 
-    save_deposition_file(EpuDataDict, TomoDataDict)
+    save_deposition_file(CompleteTomoDataDict)
 
 def findpattern(pattern, path):
     result = []
@@ -713,6 +720,21 @@ def getDefocusRange(data):
        dfMicron = [float(item) * 1e6 for item in df]
        return dfMicron
 
+def TomoOverViewData(xmlpath: Path) -> Dict[str, Any]:
+    with open(xmlpath, "r") as xml:
+        for_parsing = xml.read()
+        data = xmltodict.parse(for_parsing)
+    data = data["MicroscopeImage"]
+
+    acqusition_date = data["microscopeData"]["acquisition"]["acquisitionDateTime"]
+    date= acqusition_date.split("T",1)[0]
+    model = data["microscopeData"]["instrument"]["InstrumentModel"]
+    microscope_mode = data["microscopeData"]["optics"]["ColumnOperatingTemSubMode"]
+
+    OverViewDataDict = dict(date=date, model=model, microscope_mode=microscope_mode)
+
+    return OverViewDataDict
+
 def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
     # This will fetch the first micrograph xml data
     with open(xmlpath, "r") as xml:
@@ -848,40 +870,39 @@ def deposition_file(xml):
                        collection=collection, number_of_images=number_of_images, spot_size=spot_size, C2_micron=C2_micron, Objective_micron=Objective_micron, Beam_diameter_micron=Beam_diameter_micron)
 
     FoilHoleDataDict = FoilHoleData(searchSupervisorData.xmlData)
+    CompleteDataDict = {**EpuDataDict, **FoilHoleDataDict}
+    save_deposition_file(CompleteDataDict)
 
-    save_deposition_file(EpuDataDict, FoilHoleDataDict)
-
-
-def save_deposition_file(EpuDataDict, FoilHoleDataDict):
+def save_deposition_file(CompleteDataDict):
     # Save doppio deposition csv file
     dictHorizontal1 = {
-    'Microscope': EpuDataDict['model'],
-    'epuversion': EpuDataDict['epuVersion'],
-    'date': EpuDataDict['date'],
-    'eV': EpuDataDict['eV'],
-    'mag': EpuDataDict['xmlMag'],
-    'apix': EpuDataDict['xmlAPix'],
-    'nominal_defocus_min_microns': EpuDataDict['nominal_defocus_min_microns'],
-    'grid_topology': EpuDataDict['grid_topology'],
-    'grid_material': EpuDataDict['grid_material'],
-    'nominal_defocus_max_microns': EpuDataDict['nominal_defocus_max_microns'],
-    'spot_size': EpuDataDict['spot_size'],
-    'C2_micron': EpuDataDict['C2_micron'],
-    'Objective_micron': EpuDataDict['Objective_micron'],
-    'Beam_diameter_micron': EpuDataDict['Beam_diameter_micron'],
-    'collection': EpuDataDict['collection'],
-    'number_of_images': EpuDataDict['number_of_images'],
-    'software_name': EpuDataDict["software_name"],
+    'Microscope': CompleteDataDict['model'],
+    'epuversion': CompleteDataDict['epuVersion'],
+    'date': CompleteDataDict['date'],
+    'eV': CompleteDataDict['eV'],
+    'mag': CompleteDataDict['xmlMag'],
+    'apix': CompleteDataDict['xmlAPix'],
+    'nominal_defocus_min_microns': CompleteDataDict['nominal_defocus_min_microns'],
+    'grid_topology': CompleteDataDict['grid_topology'],
+    'grid_material': CompleteDataDict['grid_material'],
+    'nominal_defocus_max_microns': CompleteDataDict['nominal_defocus_max_microns'],
+    'spot_size': CompleteDataDict['spot_size'],
+    'C2_micron': CompleteDataDict['C2_micron'],
+    'Objective_micron': CompleteDataDict['Objective_micron'],
+    'Beam_diameter_micron': CompleteDataDict['Beam_diameter_micron'],
+    'collection': CompleteDataDict['collection'],
+    'number_of_images': CompleteDataDict['number_of_images'],
+    'software_name': CompleteDataDict["software_name"],
     'software_category': "IMAGE ACQUISITION",
-    'microscope_mode': EpuDataDict['microscope_mode'],
-    'detector_name': FoilHoleDataDict['detectorName'],
-    'dose_rate': FoilHoleDataDict['xmlDoseRate'],
-    'avg_exposure_time': FoilHoleDataDict['avgExposureTime'],
-    'detector_mode': FoilHoleDataDict['detectorMode'],
-    'slit_width': FoilHoleDataDict['slitWidth'],
-    'electron_source': FoilHoleDataDict['electronSource'],
-    'tilt_angle_min': FoilHoleDataDict['tiltAngleMin'],
-    'tilt_angle_max': FoilHoleDataDict['tiltAngleMax']
+    'microscope_mode': CompleteDataDict['microscope_mode'],
+    'detector_name': CompleteDataDict['detectorName'],
+    'dose_rate': CompleteDataDict['xmlDoseRate'],
+    'avg_exposure_time': CompleteDataDict['avgExposureTime'],
+    'detector_mode': CompleteDataDict['detectorMode'],
+    'slit_width': CompleteDataDict['slitWidth'],
+    'electron_source': CompleteDataDict['electronSource'],
+    'tilt_angle_min': CompleteDataDict['tiltAngleMin'],
+    'tilt_angle_max': CompleteDataDict['tiltAngleMax']
     }
     df1 = pd.DataFrame([dictHorizontal1])
 
@@ -922,8 +943,8 @@ def save_deposition_file(EpuDataDict, FoilHoleDataDict):
     #df = df1.merge(df2, left_index=0, right_index=0)
 
     ## Deposition file
-    depfilepath = main.dep_dir+'/'+EpuDataDict['main_sessionName']+'_dep.json'
-    checksumpath = main.dep_dir+'/'+EpuDataDict['main_sessionName']+'_dep.checksum'
+    depfilepath = main.dep_dir+'/'+CompleteDataDict['main_sessionName']+'_dep.json'
+    checksumpath = main.dep_dir+'/'+CompleteDataDict['main_sessionName']+'_dep.checksum'
 
     # Human readable deposition file
     #df.to_csv (main.dep_dir+'/'+sessionName+'.dep', index = False, header=True)
@@ -1010,7 +1031,7 @@ def save_deposition_file(EpuDataDict, FoilHoleDataDict):
     # add square brackets around keys
     df_transpose['JSON'] = df_transpose['JSON'].apply(lambda x: '[' + x.replace('.', '][') + ']')
     # Save to CSV
-    df_transpose.to_csv(main.dep_dir + '/' + EpuDataDict['main_sessionName'] + '_dep.csv', index=True, header=True)
+    df_transpose.to_csv(main.dep_dir + '/' + CompleteDataDict['main_sessionName'] + '_dep.csv', index=True, header=True)
 
     df1_selected = df1.applymap(lambda x: x.item() if isinstance(x, (np.generic, np.ndarray)) else x)
 
@@ -1044,7 +1065,7 @@ def save_deposition_file(EpuDataDict, FoilHoleDataDict):
 
     # transalating and writting to cif file
     print("CIF_DICTIONARY", cif_dict)
-    translate_xml_to_cif(cif_dict, EpuDataDict['main_sessionName'])
+    translate_xml_to_cif(cif_dict, CompleteDataDict['main_sessionName'])
 
 
 def df_lookup(df, column):
