@@ -89,17 +89,13 @@ def perform_tomogram_harvest(tomogram_file, output_dir):
 
     FoilDataDict = FoilHoleData(tomogram_file)
     main_sessionName = FoilDataDict["sessionName"]
-    EpuDataDict = dict(main_sessionName=main_sessionName, xmlMag="?", xmlMetrePix="?", xmlAPix="?", eV="?",
-                       grid_topology="?", grid_material="?",
-                       software_name="?", epuVersion="?", nominal_defocus_min_microns="?",
-                       nominal_defocus_max_microns="?",
+    EpuDataDict = dict(main_sessionName=main_sessionName, grid_topology="?", grid_material="?", nominal_defocus_min_microns="?", nominal_defocus_max_microns="?",
                        collection="?", number_of_images="?", spot_size="?", C2_micron="?", Objective_micron="?",
                        Beam_diameter_micron="?")
     TomoDataDict = {**FoilDataDict, **EpuDataDict}
 
     OverViewDataDict = TomoOverViewData(tomogram_file)
     CompleteTomoDataDict = {**TomoDataDict, **OverViewDataDict}
-    print("COMPFDSF", CompleteTomoDataDict)
 
     save_deposition_file(CompleteTomoDataDict)
 
@@ -730,8 +726,24 @@ def TomoOverViewData(xmlpath: Path) -> Dict[str, Any]:
     date= acqusition_date.split("T",1)[0]
     model = data["microscopeData"]["instrument"]["InstrumentModel"]
     microscope_mode = data["microscopeData"]["optics"]["ColumnOperatingTemSubMode"]
+    eV = data["microscopeData"]["gun"]["AccelerationVoltage"]
+    xmlMag = data["microscopeData"]["optics"]["TemMagnification"]["NominalMagnification"]
+    xmlMetrePix = data["SpatialScale"]["pixelSize"]["x"]["numericValue"]
+    xmlAPix = float(xmlMetrePix) * 1e10
+    xmlAPix = roundup(xmlAPix, 1)
+    software_name = data["microscopeData"]["core"]["ApplicationSoftware"]
+    software_version = data["microscopeData"]["core"]["ApplicationSoftwareVersion"]
 
-    OverViewDataDict = dict(date=date, model=model, microscope_mode=microscope_mode)
+    objectiveAperture, C2_micron = "", ""
+    keyValueList = data["CustomData"]["a:KeyValueOfstringanyType"]
+    for i, value in enumerate(keyValueList):
+        key = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Key"]
+        if key == "Aperture[OBJ].Name":
+            objectiveAperture = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Value"]["#text"]
+        if key == "Aperture[C2].Name":
+            C2_micron = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Value"]["#text"]
+
+    OverViewDataDict = dict(date=date, model=model, microscope_mode=microscope_mode, eV=eV, xmlMag=xmlMag, xmlMetrePix=xmlMetrePix, xmlAPix=xmlAPix, objectiveAperture=objectiveAperture, C2_micron=C2_micron, software_name=software_name, software_version=software_version)
 
     return OverViewDataDict
 
@@ -836,7 +848,7 @@ def deposition_file(xml):
 
     # This is the data xml metadata file already in a dictionary
     data = searchSupervisorData.xmlDataDict["MicroscopeImage"]
-    epuVersion = df_lookup(main.masterdf, 'epuVersion')
+    software_version = df_lookup(main.masterdf, 'epuVersion')
     date = df_lookup(main.masterdf, 'sessionDate').strftime("%Y-%m-%d %H:%M:%S")
     nominal_defocus_min_microns = df_lookup(main.masterdf, 'defocusMin')
     nominal_defocus_max_microns = df_lookup(main.masterdf, 'defocusMax')
@@ -866,7 +878,7 @@ def deposition_file(xml):
     grid_topology = grid_parts[0]
     grid_material = grid_parts[1]
     EpuDataDict = dict(main_sessionName=main_sessionName, xmlMag= xmlMag, xmlMetrePix=xmlMetrePix, xmlAPix=xmlAPix, model=model, eV=eV, microscope_mode=microscope_mode, grid_topology=grid_topology, grid_material=grid_material,
-                       software_name="EPU", epuVersion=epuVersion, date=date, nominal_defocus_min_microns=nominal_defocus_min_microns, nominal_defocus_max_microns=nominal_defocus_max_microns,
+                       software_name="EPU", software_version=software_version, date=date, nominal_defocus_min_microns=nominal_defocus_min_microns, nominal_defocus_max_microns=nominal_defocus_max_microns,
                        collection=collection, number_of_images=number_of_images, spot_size=spot_size, C2_micron=C2_micron, Objective_micron=Objective_micron, Beam_diameter_micron=Beam_diameter_micron)
 
     FoilHoleDataDict = FoilHoleData(searchSupervisorData.xmlData)
@@ -877,7 +889,7 @@ def save_deposition_file(CompleteDataDict):
     # Save doppio deposition csv file
     dictHorizontal1 = {
     'Microscope': CompleteDataDict['model'],
-    'epuversion': CompleteDataDict['epuVersion'],
+    'software_version': CompleteDataDict['software_version'],
     'date': CompleteDataDict['date'],
     'eV': CompleteDataDict['eV'],
     'mag': CompleteDataDict['xmlMag'],
@@ -910,7 +922,7 @@ def save_deposition_file(CompleteDataDict):
     dictHorizontal2 = {
     'Microscope': 'em_imaging.microscope_model',
     'software_name': 'em_software.name',
-    'epuversion': 'em_software.version',
+    'software_version': 'em_software.version',
     'software_category': 'em_software.category',
     'date': 'em_imaging.date',
     'eV': 'em_imaging.accelerating_voltage',
