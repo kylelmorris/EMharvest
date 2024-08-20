@@ -763,6 +763,7 @@ def unique_values(existing_list, new_values):
         elif value not in existing_list:
             existing_list.append(value)
     return existing_list
+
 def TomoMdocData(mdocpath: Path) -> Dict[str, Any]:
     """Reading the mdoc file information and storing in a dictionary."""
     mdoc_data = {}
@@ -798,6 +799,15 @@ def TomoMdocData(mdocpath: Path) -> Dict[str, Any]:
                     mdoc_data[key] = unique_values(mdoc_data[key], values)
                 else:
                     mdoc_data[key] = values
+
+    for key, value in mdoc_data.items():
+        if isinstance(value, list):
+            if len(value) == 1:
+                mdoc_data[key] = value[0]
+            else:
+                unique_val = list(set(value))
+                if len(unique_val) == 1:
+                    mdoc_data[key] = unique_val[0]
 
     return mdoc_data
 
@@ -968,7 +978,10 @@ def save_deposition_file(CompleteDataDict):
     'slit_width': CompleteDataDict['slitWidth'],
     'electron_source': CompleteDataDict['electronSource'],
     'tilt_angle_min': CompleteDataDict['tiltAngleMin'],
-    'tilt_angle_max': CompleteDataDict['tiltAngleMax']
+    'tilt_angle_max': CompleteDataDict['tiltAngleMax'],
+    'pixel_spacing_x': CompleteDataDict['PixelSpacing'],
+    'pixel_spacing_y': CompleteDataDict['PixelSpacing'],
+    'pixel_spacing_z': CompleteDataDict['PixelSpacing']
     }
     df1 = pd.DataFrame([dictHorizontal1])
 
@@ -1000,7 +1013,10 @@ def save_deposition_file(CompleteDataDict):
     "slit_width": "em_imaging_optics.energyfilter_slit_width",
     "electron_source": "em_imaging.electron_source",
     "tilt_angle_min": "em_imaging.tilt_angle_min",
-    "tilt_angle_max": "em_imaging.tilt_angle_max"
+    "tilt_angle_max": "em_imaging.tilt_angle_max",
+    "pixel_spacing_x": "em_map.pixel_spacing_x",
+    "pixel_spacing_y": "em_map.pixel_spacing_y",
+    "pixel_spacing_z": "em_map.pixel_spacing_z",
     }
     df2 = pd.DataFrame([dictHorizontal2])
 
@@ -1048,7 +1064,10 @@ def save_deposition_file(CompleteDataDict):
         '[MicroscopeImage][microscopeData][optics][][EnergyFilter][EnergySelectionSlitWidth]',
         '[MicroscopeImage][microscopeData][gun][Sourcetype]',
         '[MicroscopeImage][microscopeData][stage][Position][A]',
-        '[MicroscopeImage][microscopeData][stage][Position][B]'
+        '[MicroscopeImage][microscopeData][stage][Position][B]',
+        '[PixelSpacing]',
+        '[PixelSpacing]',
+        '[PixelSpacing]'
     ]
 
     emdb_xml_path_list = [
@@ -1078,7 +1097,10 @@ def save_deposition_file(CompleteDataDict):
         '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][specialist_optics][energyfilter][slith_width]',
         '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][electron_source]',
         '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][tilt_angle_min]',
-        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][tilt_angle_max]'
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][tilt_angle_max]',
+        '[emd][map][pixel_spacing][x]',
+        '[emd][map][pixel_spacing][y]',
+        '[emd][map][pixel_spacing][z]',
         ]
 
     # Transpose
