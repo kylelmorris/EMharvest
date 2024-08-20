@@ -42,6 +42,7 @@ parser.add_argument("-a", "--atlas", help="Atlas session file: ScreeningSession.
 parser.add_argument("-o", "--output", help="Output directory for generated reports")
 parser.add_argument("-p", "--print", help="Optional: Y = Only print xml and exit")
 parser.add_argument("-t", "--tomogram_file", help="Tomogram file (Required for TOMO mode)")
+parser.add_argument("-d", "--mdoc_file", help="Tomography mdoc file (Required for TOMO mode)")
 args = parser.parse_args()
 
 
@@ -69,22 +70,22 @@ def main():
         perform_minimal_harvest(main.epu_xml, output_dir)
 
     elif args.mode == "TOMO":
-        if not args.tomogram_file:
-            parser.error("TOMO mode requires --tomogram_file.")
-
-        # Implement TOMO-specific functionality here
         tomogram_file = args.tomogram_file
+        mdoc_file = args.mdoc_file
+        if not tomogram_file or not mdoc_file:
+            parser.error("TOMO mode requires both --tomogram_file and a --mdoc file.")
+
         output_dir = os.path.join(os.getcwd(), "emharvest")
         main.dep_dir = os.path.join(output_dir, "dep_tomo")
 
         if not os.path.exists(main.dep_dir):
             os.makedirs(main.dep_dir)
 
-        perform_tomogram_harvest(tomogram_file, output_dir)
+        perform_tomogram_harvest(tomogram_file, mdoc_file, output_dir)
 
 
-def perform_tomogram_harvest(tomogram_file, output_dir):
-    print(f"Processing tomogram data from file: {tomogram_file}")
+def perform_tomogram_harvest(tomogram_file, mdoc_file, output_dir):
+    print(f"Processing tomogram data from file: {tomogram_file} and {mdoc_file}")
     print(f"Output will be saved to: {output_dir}/dep_tomo")
 
     FoilDataDict = FoilHoleData(tomogram_file)
@@ -92,10 +93,13 @@ def perform_tomogram_harvest(tomogram_file, output_dir):
     EpuDataDict = dict(main_sessionName=main_sessionName, grid_topology="?", grid_material="?", nominal_defocus_min_microns="?", nominal_defocus_max_microns="?",
                        collection="?", number_of_images="?", spot_size="?", C2_micron="?", Objective_micron="?",
                        Beam_diameter_micron="?")
-    TomoDataDict = {**FoilDataDict, **EpuDataDict}
+    TomoOverViewDataDict = {**FoilDataDict, **EpuDataDict}
 
     OverViewDataDict = TomoOverViewData(tomogram_file)
-    CompleteTomoDataDict = {**TomoDataDict, **OverViewDataDict}
+    TomoDataDict = {**TomoOverViewDataDict, **OverViewDataDict}
+
+    TomoMdocDataDict = TomoMdocData(mdoc_file)
+    CompleteTomoDataDict = {**TomoDataDict, **TomoMdocDataDict}
 
     save_deposition_file(CompleteTomoDataDict)
 
@@ -717,6 +721,7 @@ def getDefocusRange(data):
        return dfMicron
 
 def TomoOverViewData(xmlpath: Path) -> Dict[str, Any]:
+    """Reading the Overview.xml file information and storing in a dictionary."""
     with open(xmlpath, "r") as xml:
         for_parsing = xml.read()
         data = xmltodict.parse(for_parsing)
@@ -748,6 +753,53 @@ def TomoOverViewData(xmlpath: Path) -> Dict[str, Any]:
     OverViewDataDict = dict(date=date, model=model, microscope_mode=microscope_mode, eV=eV, xmlMag=xmlMag, xmlMetrePix=xmlMetrePix, xmlAPix=xmlAPix, objectiveAperture=objectiveAperture, C2_micron=C2_micron, software_name=software_name, software_version=software_version)
 
     return OverViewDataDict
+
+def unique_values(existing_list, new_values):
+    """Add unique values to the list, handling NaN separately."""
+    for value in new_values:
+        if isinstance(value, float) and math.isnan(value):
+            if not any(isinstance(v, float) and math.isnan(v) for v in existing_list):
+                existing_list.append(value)
+        elif value not in existing_list:
+            existing_list.append(value)
+    return existing_list
+def TomoMdocData(mdocpath: Path) -> Dict[str, Any]:
+    """Reading the mdoc file information and storing in a dictionary."""
+    mdoc_data = {}
+
+    with open(mdocpath, "r") as file:
+        for line in file:
+            line = line.strip()
+            if line.startswith("[") and line.endswith("]"):
+                line = line[1:-1].strip()
+            if not line:
+                continue
+
+            if "=" in line:
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip()
+
+                # Handle multiple values in one line
+                if " " in value:
+                    values = value.split()
+                    try:
+                        values = [float(v) for v in values]
+                    except ValueError:
+                        pass
+                else:
+                    try:
+                        values = [float(value)]
+                    except ValueError:
+                        values = [value]
+
+                # Update the mdoc_data dictionary
+                if key in mdoc_data:
+                    mdoc_data[key] = unique_values(mdoc_data[key], values)
+                else:
+                    mdoc_data[key] = values
+
+    return mdoc_data
 
 def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
     # This will fetch the first micrograph xml data
