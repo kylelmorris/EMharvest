@@ -731,7 +731,9 @@ def TomoOverViewData(xmlpath: Path) -> Dict[str, Any]:
     xmlMetrePix = data["SpatialScale"]["pixelSize"]["x"]["numericValue"]
     xmlAPix = float(xmlMetrePix) * 1e10
     xmlAPix = roundup(xmlAPix, 1)
-    software_name = data["microscopeData"]["core"]["ApplicationSoftware"]
+    soft_name = data["microscopeData"]["core"]["ApplicationSoftware"]
+    if soft_name == "Tomography":
+        software_name = "FEI tomography"
     software_version = data["microscopeData"]["core"]["ApplicationSoftwareVersion"]
 
     objectiveAperture, C2_micron = "", ""
