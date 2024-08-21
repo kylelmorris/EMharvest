@@ -981,7 +981,8 @@ def save_deposition_file(CompleteDataDict):
     'tilt_angle_max': CompleteDataDict['tiltAngleMax'],
     'pixel_spacing_x': CompleteDataDict['PixelSpacing'],
     'pixel_spacing_y': CompleteDataDict['PixelSpacing'],
-    'pixel_spacing_z': CompleteDataDict['PixelSpacing']
+    'pixel_spacing_z': CompleteDataDict['PixelSpacing'],
+    'angle_increment': CompleteDataDict['ZValue'][1] - CompleteDataDict['ZValue'][0]
     }
     df1 = pd.DataFrame([dictHorizontal1])
 
@@ -1017,6 +1018,7 @@ def save_deposition_file(CompleteDataDict):
     "pixel_spacing_x": "em_map.pixel_spacing_x",
     "pixel_spacing_y": "em_map.pixel_spacing_y",
     "pixel_spacing_z": "em_map.pixel_spacing_z",
+    "angle_increment": "_em_tomography.axis1_angle_increment"
     }
     df2 = pd.DataFrame([dictHorizontal2])
 
@@ -1067,7 +1069,8 @@ def save_deposition_file(CompleteDataDict):
         '[MicroscopeImage][microscopeData][stage][Position][B]',
         '[PixelSpacing]',
         '[PixelSpacing]',
-        '[PixelSpacing]'
+        '[PixelSpacing]',
+        '[ZValue]'
     ]
 
     emdb_xml_path_list = [
@@ -1101,6 +1104,7 @@ def save_deposition_file(CompleteDataDict):
         '[emd][map][pixel_spacing][x]',
         '[emd][map][pixel_spacing][y]',
         '[emd][map][pixel_spacing][z]',
+        '[emd]'
         ]
 
     # Transpose
