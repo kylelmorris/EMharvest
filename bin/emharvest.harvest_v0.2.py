@@ -993,7 +993,10 @@ def save_deposition_file(CompleteDataDict):
     'angle_increment': float(SubFramePath(CompleteDataDict,2)) - float(SubFramePath(CompleteDataDict,1)),
     'rotation_axis': CompleteDataDict['RotationAngle'],
     'max_angle': SubFramePath(CompleteDataDict,-1),
-    'min_angle': SubFramePath(CompleteDataDict,-2)
+    'min_angle': SubFramePath(CompleteDataDict,-2),
+    'angle2_increment': '?',
+    'max_angle2': '?',
+    'min_angle2': '?'
     }
     df1 = pd.DataFrame([dictHorizontal1])
 
@@ -1032,7 +1035,10 @@ def save_deposition_file(CompleteDataDict):
     "angle_increment": "em_tomography.axis1_angle_increment",
     "rotation_axis": "em_tomography.dual_tilt_axis_rotation",
     "max_angle": "em_tomography.axis1_max_angle",
-    "min_angle": "em_tomography.axis1_min_angle"
+    "min_angle": "em_tomography.axis1_min_angle",
+    "angle2_increment": "em_tomography.axis2_angle_increment",
+    "max_angle2": "em_tomography.axis2_max_angle",
+    "min_angle2": "em_tomography.axis2_min_angle"
     }
     df2 = pd.DataFrame([dictHorizontal2])
 
@@ -1087,7 +1093,10 @@ def save_deposition_file(CompleteDataDict):
         '[SubFramPath]',
         '[RotationAngle]',
         '[SubFramePath]',
-        '[SubFramePath]'
+        '[SubFramePath]',
+        '[CryoTomo is usually single axis tilt]',
+        '[CryoTomo is usually single axis tilt]',
+        '[CryoTomo is usually single axis tilt]'
     ]
 
     emdb_xml_path_list = [
@@ -1121,6 +1130,9 @@ def save_deposition_file(CompleteDataDict):
         '[emd][map][pixel_spacing][x]',
         '[emd][map][pixel_spacing][y]',
         '[emd][map][pixel_spacing][z]',
+        '[emd]',
+        '[emd]',
+        '[emd]',
         '[emd]',
         '[emd]',
         '[emd]',
