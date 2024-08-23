@@ -949,6 +949,14 @@ def deposition_file(xml):
     CompleteDataDict = {**EpuDataDict, **FoilHoleDataDict}
     save_deposition_file(CompleteDataDict)
 
+def SubFramePath(CompleteDataDict, n):
+    """ To get the information from SubFramPath value in mdoc file"""
+    SubFramePath = CompleteDataDict['SubFramePath'][n]
+    file_name = SubFramePath.split('\\')[-1]
+    parts = file_name.split('.')[0]
+    angle = parts.split('_')[-1]
+    return angle
+
 def save_deposition_file(CompleteDataDict):
     # Save doppio deposition csv file
     dictHorizontal1 = {
@@ -982,7 +990,10 @@ def save_deposition_file(CompleteDataDict):
     'pixel_spacing_x': CompleteDataDict['PixelSpacing'],
     'pixel_spacing_y': CompleteDataDict['PixelSpacing'],
     'pixel_spacing_z': CompleteDataDict['PixelSpacing'],
-    'angle_increment': CompleteDataDict['ZValue'][1] - CompleteDataDict['ZValue'][0]
+    'angle_increment': float(SubFramePath(CompleteDataDict,2)) - float(SubFramePath(CompleteDataDict,1)),
+    'rotation_axis': CompleteDataDict['RotationAngle'],
+    'max_angle': SubFramePath(CompleteDataDict,-1),
+    'min_angle': SubFramePath(CompleteDataDict,-2)
     }
     df1 = pd.DataFrame([dictHorizontal1])
 
@@ -1018,7 +1029,10 @@ def save_deposition_file(CompleteDataDict):
     "pixel_spacing_x": "em_map.pixel_spacing_x",
     "pixel_spacing_y": "em_map.pixel_spacing_y",
     "pixel_spacing_z": "em_map.pixel_spacing_z",
-    "angle_increment": "_em_tomography.axis1_angle_increment"
+    "angle_increment": "em_tomography.axis1_angle_increment",
+    "rotation_axis": "em_tomography.dual_tilt_axis_rotation",
+    "max_angle": "em_tomography.axis1_max_angle",
+    "min_angle": "em_tomography.axis1_min_angle"
     }
     df2 = pd.DataFrame([dictHorizontal2])
 
@@ -1070,7 +1084,10 @@ def save_deposition_file(CompleteDataDict):
         '[PixelSpacing]',
         '[PixelSpacing]',
         '[PixelSpacing]',
-        '[ZValue]'
+        '[SubFramPath]',
+        '[RotationAngle]',
+        '[SubFramePath]',
+        '[SubFramePath]'
     ]
 
     emdb_xml_path_list = [
@@ -1104,6 +1121,9 @@ def save_deposition_file(CompleteDataDict):
         '[emd][map][pixel_spacing][x]',
         '[emd][map][pixel_spacing][y]',
         '[emd][map][pixel_spacing][z]',
+        '[emd]',
+        '[emd]',
+        '[emd]',
         '[emd]'
         ]
 
