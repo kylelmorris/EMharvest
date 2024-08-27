@@ -102,6 +102,8 @@ def perform_tomogram_harvest(tomogram_file, mdoc_file, output_dir):
     TomoDataDict = {**TomoOverViewDataDict, **OverViewDataDict}
 
     TomoMdocDataDict = TomoMdocData(mdoc_file)
+
+    TomoDataDict['xmlMag'] = TomoMdocDataDict['Magnification']
     CompleteTomoDataDict = {**TomoDataDict, **TomoMdocDataDict}
 
     save_deposition_file(CompleteTomoDataDict)
