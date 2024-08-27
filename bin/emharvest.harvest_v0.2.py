@@ -1135,13 +1135,13 @@ def save_deposition_file(CompleteDataDict):
         '[emd][map][pixel_spacing][x]',
         '[emd][map][pixel_spacing][y]',
         '[emd][map][pixel_spacing][z]',
-        '[emd]',
-        '[emd]',
-        '[emd]',
-        '[emd]',
-        '[emd]',
-        '[emd]',
-        '[emd]'
+        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis1][angle_increment]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis_rotation]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis1][max_angle]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis1][min_angle]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis2][angle_increment]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis2][max_angle]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis2][min_angle]'
         ]
 
     # Transpose
