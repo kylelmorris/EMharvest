@@ -89,10 +89,13 @@ def perform_tomogram_harvest(tomogram_file, mdoc_file, output_dir):
     print(f"Output will be saved to: {output_dir}/dep_tomo")
 
     FoilDataDict = FoilHoleData(tomogram_file)
+    FoilDataDict['tiltAngleMax'] = "?"
+    FoilDataDict['tiltAngleMin'] = "?"
     main_sessionName = FoilDataDict["sessionName"]
     EpuDataDict = dict(main_sessionName=main_sessionName, grid_topology="?", grid_material="?", nominal_defocus_min_microns="?", nominal_defocus_max_microns="?",
                        collection="?", number_of_images="?", spot_size="?", C2_micron="?", Objective_micron="?",
                        Beam_diameter_micron="?")
+
     TomoOverViewDataDict = {**FoilDataDict, **EpuDataDict}
 
     OverViewDataDict = TomoOverViewData(tomogram_file)
