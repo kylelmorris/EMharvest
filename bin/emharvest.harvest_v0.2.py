@@ -92,6 +92,7 @@ def perform_tomogram_harvest(tomogram_file, mdoc_file, output_dir):
     FoilDataDict['tiltAngleMax'] = "?"
     FoilDataDict['tiltAngleMin'] = "?"
     main_sessionName = FoilDataDict["sessionName"]
+
     EpuDataDict = dict(main_sessionName=main_sessionName, grid_topology="?", grid_material="?", nominal_defocus_min_microns="?", nominal_defocus_max_microns="?",
                        collection="?", number_of_images="?", spot_size="?", C2_micron="?", Objective_micron="?",
                        Beam_diameter_micron="?")
@@ -745,6 +746,7 @@ def TomoOverViewData(xmlpath: Path) -> Dict[str, Any]:
     if soft_name == "Tomography":
         software_name = "FEI tomography"
     software_version = data["microscopeData"]["core"]["ApplicationSoftwareVersion"]
+    illumination = data["microscopeData"]["optics"]["IlluminationMode"]
 
     objectiveAperture, C2_micron = "", ""
     keyValueList = data["CustomData"]["a:KeyValueOfstringanyType"]
@@ -755,7 +757,7 @@ def TomoOverViewData(xmlpath: Path) -> Dict[str, Any]:
         if key == "Aperture[C2].Name":
             C2_micron = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Value"]["#text"]
 
-    OverViewDataDict = dict(date=date, model=model, microscope_mode=microscope_mode, eV=eV, xmlMag=xmlMag, xmlMetrePix=xmlMetrePix, xmlAPix=xmlAPix, objectiveAperture=objectiveAperture, C2_micron=C2_micron, software_name=software_name, software_version=software_version)
+    OverViewDataDict = dict(date=date, model=model, microscope_mode=microscope_mode, eV=eV, xmlMag=xmlMag, xmlMetrePix=xmlMetrePix, xmlAPix=xmlAPix, objectiveAperture=objectiveAperture, C2_micron=C2_micron, software_name=software_name, software_version=software_version, illumination=illumination)
 
     return OverViewDataDict
 
@@ -939,6 +941,7 @@ def deposition_file(xml):
     eV = data["microscopeData"]["gun"]["AccelerationVoltage"]
 
     microscope_mode = data["microscopeData"]["optics"]["ColumnOperatingTemSubMode"]
+    # illumination = data["microscopeData"]["optics"]["IlluminationMode"]
 
     grid_type = df_lookup(main.masterdf, 'gridType')
     grid_parts = re.findall(r'[A-Z][a-z]*', grid_type)
@@ -988,6 +991,7 @@ def save_deposition_file(CompleteDataDict):
     'dose_rate': CompleteDataDict['xmlDoseRate'],
     'avg_exposure_time': CompleteDataDict['avgExposureTime'],
     'detector_mode': CompleteDataDict['detectorMode'],
+    'illumination_mode': CompleteDataDict['illumination'].upper(),
     'slit_width': CompleteDataDict['slitWidth'],
     'electron_source': CompleteDataDict['electronSource'],
     'tilt_angle_min': CompleteDataDict['tiltAngleMin'],
@@ -1030,6 +1034,7 @@ def save_deposition_file(CompleteDataDict):
     "dose_rate": "em_image_recording.avg_electron_dose_per_image",
     "avg_exposure_time": "em_image_recording.average_exposure_time",
     "detector_mode": "em_image_recording.detector_mode",
+    "illumination_mode": "em_imaging.illumination_mode",
     "slit_width": "em_imaging_optics.energyfilter_slit_width",
     "electron_source": "em_imaging.electron_source",
     "tilt_angle_min": "em_imaging.tilt_angle_min",
@@ -1088,7 +1093,8 @@ def save_deposition_file(CompleteDataDict):
         '?',
         '[MicroscopeImage][microscopeData][acquisition][camera][ExposureTime]',
         '[MicroscopeImage][microscopeData][acquisition][camera][CameraSpecificInput][a:KeyValueOfstringanyType][a:Key] is ElectronCountingEnabled and [<a:Vallue>] is true then COUNTING',
-        '[MicroscopeImage][microscopeData][optics][][EnergyFilter][EnergySelectionSlitWidth]',
+        '[MicroscopeImage][microscopeData][optics][IlluminationMode]',
+        '[MicroscopeImage][microscopeData][optics][EnergyFilter][EnergySelectionSlitWidth]',
         '[MicroscopeImage][microscopeData][gun][Sourcetype]',
         '[MicroscopeImage][microscopeData][stage][Position][A]',
         '[MicroscopeImage][microscopeData][stage][Position][B]',
@@ -1128,6 +1134,7 @@ def save_deposition_file(CompleteDataDict):
         '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][image_recording_list][image_recording][average_electron_dose_per_image]',
         '[emd][structure_determination_list][structure_determination][microscopy_list][image_recording_list][image_recording][average_exposure_time]',
         '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][image_recording_list][image_recording][detector_mode]',
+        '[emd][structure_determination_list][structure_determination][microscopy_list][microscopy][illumination_mode]',
         '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][specialist_optics][energyfilter][slith_width]',
         '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][electron_source]',
         '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][tilt_angle_min]',
