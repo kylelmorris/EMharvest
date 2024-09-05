@@ -1000,16 +1000,17 @@ def save_deposition_file(CompleteDataDict):
     'tilt_angle_max': CompleteDataDict['tiltAngleMax']
     }
     if args.mode == "TOMO":
-        dictHorizontal1['pixel_spacing_x'] = CompleteDataDict['PixelSpacing']
-        dictHorizontal1['pixel_spacing_y'] = CompleteDataDict['PixelSpacing']
-        dictHorizontal1['pixel_spacing_z'] = CompleteDataDict['PixelSpacing']
-        dictHorizontal1['angle_increment'] = float(SubFramePath(CompleteDataDict,2)) - float(SubFramePath(CompleteDataDict,1))
-        dictHorizontal1['rotation_axis'] = CompleteDataDict['RotationAngle']
-        dictHorizontal1['max_angle'] = SubFramePath(CompleteDataDict,-1)
-        dictHorizontal1['min_angle'] = SubFramePath(CompleteDataDict,-2)
-        dictHorizontal1['angle2_increment'] = '?'
-        dictHorizontal1['max_angle2'] = '?'
-        dictHorizontal1['min_angle2'] = '?'
+        dictHorizontal1.update({'pixel_spacing_x': CompleteDataDict['PixelSpacing'],
+                                'pixel_spacing_y': CompleteDataDict['PixelSpacing'],
+                                'pixel_spacing_z': CompleteDataDict['PixelSpacing'],
+                                'angle_increment': float(SubFramePath(CompleteDataDict,2)) - float(SubFramePath(CompleteDataDict,1)),
+                                'rotation_axis': CompleteDataDict['RotationAngle'],
+                                'max_angle': SubFramePath(CompleteDataDict,-1),
+                                'min_angle': SubFramePath(CompleteDataDict,-2),
+                                'angle2_increment': '?',
+                                'max_angle2': '?',
+                                'min_angle2': '?'
+                                })
 
     df1 = pd.DataFrame([dictHorizontal1])
 
@@ -1045,18 +1046,19 @@ def save_deposition_file(CompleteDataDict):
     "tilt_angle_max": "em_imaging.tilt_angle_max"
     }
     if args.mode == "TOMO":
-        dictHorizontal2["pixel_spacing_x"] = "em_map.pixel_spacing_x"
-        dictHorizontal2["pixel_spacing_y"] = "em_map.pixel_spacing_y"
-        dictHorizontal2["pixel_spacing_z"] = "em_map.pixel_spacing_z"
-        dictHorizontal2["angle_increment"] = "em_tomography.axis1_angle_increment"
-        dictHorizontal2["rotation_axis"] = "em_tomography.dual_tilt_axis_rotation"
-        dictHorizontal2["max_angle"] = "em_tomography.axis1_max_angle"
-        dictHorizontal2["min_angle"] = "em_tomography.axis1_min_angle"
-        dictHorizontal2["angle2_increment"] = "em_tomography.axis2_angle_increment"
-        dictHorizontal2["max_angle2"] = "em_tomography.axis2_max_angle"
-        dictHorizontal2["min_angle2"] = "em_tomography.axis2_min_angle"
+        dictHorizontal2.update({ "pixel_spacing_x": "em_map.pixel_spacing_x",
+                                 "pixel_spacing_y": "em_map.pixel_spacing_y",
+                                 "pixel_spacing_z": "em_map.pixel_spacing_z",
+                                 "angle_increment": "em_tomography.axis1_angle_increment",
+                                 "rotation_axis": "em_tomography.dual_tilt_axis_rotation",
+                                 "max_angle": "em_tomography.axis1_max_angle",
+                                 "min_angle": "em_tomography.axis1_min_angle",
+                                 "angle2_increment": "em_tomography.axis2_angle_increment",
+                                 "max_angle2": "em_tomography.axis2_max_angle",
+                                 "min_angle2": "em_tomography.axis2_min_angle"})
 
     df2 = pd.DataFrame([dictHorizontal2])
+    print("DFDSFFG", len(dictHorizontal1), len(dictHorizontal2))
 
     # Append the second row to the DataFrame
     df = pd.concat([df1, df2], ignore_index=True, sort=False)
@@ -1106,7 +1108,7 @@ def save_deposition_file(CompleteDataDict):
         '[MicroscopeImage][microscopeData][stage][Position][B]'
     ]
     if args.mode == "TOMO":
-        tfs_xml_path_list.append(['[PixelSpacing]',
+        tfs_xml_path_list.extend(['[PixelSpacing]',
                                   '[PixelSpacing]',
                                   '[PixelSpacing]',
                                   '[SubFramPath]',
@@ -1148,7 +1150,7 @@ def save_deposition_file(CompleteDataDict):
         '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][tilt_angle_max]'
     ]
     if args.mode == "TOMO":
-        emdb_xml_path_list.append(['[emd][map][pixel_spacing][x]',
+        emdb_xml_path_list.extend(['[emd][map][pixel_spacing][x]',
                                    '[emd][map][pixel_spacing][y]',
                                    '[emd][map][pixel_spacing][z]',
                                    '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis1][angle_increment]',
@@ -1164,6 +1166,7 @@ def save_deposition_file(CompleteDataDict):
     df_transpose = df.T
     # Set headings
     df_transpose.columns = headings
+    print("DDSGDGDSFDSFSDGDS", len(tfs_xml_path_list), len(emdb_xml_path_list),len(df_transpose), tfs_xml_path_list)
     # Add XML paths
     if len(tfs_xml_path_list) != len(df_transpose):
         raise ValueError("Length of tfs_xml_path_list must match the number of rows in the DataFrame")
