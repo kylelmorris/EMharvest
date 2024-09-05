@@ -1058,7 +1058,6 @@ def save_deposition_file(CompleteDataDict):
                                  "min_angle2": "em_tomography.axis2_min_angle"})
 
     df2 = pd.DataFrame([dictHorizontal2])
-    print("DFDSFFG", len(dictHorizontal1), len(dictHorizontal2))
 
     # Append the second row to the DataFrame
     df = pd.concat([df1, df2], ignore_index=True, sort=False)
@@ -1166,7 +1165,6 @@ def save_deposition_file(CompleteDataDict):
     df_transpose = df.T
     # Set headings
     df_transpose.columns = headings
-    print("DDSGDGDSFDSFSDGDS", len(tfs_xml_path_list), len(emdb_xml_path_list),len(df_transpose), tfs_xml_path_list)
     # Add XML paths
     if len(tfs_xml_path_list) != len(df_transpose):
         raise ValueError("Length of tfs_xml_path_list must match the number of rows in the DataFrame")
