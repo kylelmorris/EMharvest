@@ -949,9 +949,11 @@ def deposition_file(xml):
     # Now, parts will be ['Holey', 'Carbon']
     grid_topology = grid_parts[0]
     grid_material = grid_parts[1]
+
     EpuDataDict = dict(main_sessionName=main_sessionName, xmlMag= xmlMag, xmlMetrePix=xmlMetrePix, xmlAPix=xmlAPix, model=model, eV=eV, microscope_mode=microscope_mode, grid_topology=grid_topology, grid_material=grid_material,
                        software_name="EPU", software_version=software_version, date=date, nominal_defocus_min_microns=nominal_defocus_min_microns, nominal_defocus_max_microns=nominal_defocus_max_microns,
-                       collection=collection, number_of_images=number_of_images, spot_size=spot_size, C2_micron=C2_micron, Objective_micron=Objective_micron, Beam_diameter_micron=Beam_diameter_micron)
+                       collection=collection, number_of_images=number_of_images, spot_size=spot_size, C2_micron=C2_micron, Objective_micron=Objective_micron, Beam_diameter_micron=Beam_diameter_micron, illumination="?",
+                       PixelSpacing="?", SubFramePath="?")
 
     FoilHoleDataDict = FoilHoleData(searchSupervisorData.xmlData)
     CompleteDataDict = {**EpuDataDict, **FoilHoleDataDict}
@@ -995,18 +997,20 @@ def save_deposition_file(CompleteDataDict):
     'slit_width': CompleteDataDict['slitWidth'],
     'electron_source': CompleteDataDict['electronSource'],
     'tilt_angle_min': CompleteDataDict['tiltAngleMin'],
-    'tilt_angle_max': CompleteDataDict['tiltAngleMax'],
-    'pixel_spacing_x': CompleteDataDict['PixelSpacing'],
-    'pixel_spacing_y': CompleteDataDict['PixelSpacing'],
-    'pixel_spacing_z': CompleteDataDict['PixelSpacing'],
-    'angle_increment': float(SubFramePath(CompleteDataDict,2)) - float(SubFramePath(CompleteDataDict,1)),
-    'rotation_axis': CompleteDataDict['RotationAngle'],
-    'max_angle': SubFramePath(CompleteDataDict,-1),
-    'min_angle': SubFramePath(CompleteDataDict,-2),
-    'angle2_increment': '?',
-    'max_angle2': '?',
-    'min_angle2': '?'
+    'tilt_angle_max': CompleteDataDict['tiltAngleMax']
     }
+    if args.mode == "TOMO":
+        dictHorizontal1['pixel_spacing_x'] = CompleteDataDict['PixelSpacing']
+        dictHorizontal1['pixel_spacing_y'] = CompleteDataDict['PixelSpacing']
+        dictHorizontal1['pixel_spacing_z'] = CompleteDataDict['PixelSpacing']
+        dictHorizontal1['angle_increment'] = float(SubFramePath(CompleteDataDict,2)) - float(SubFramePath(CompleteDataDict,1))
+        dictHorizontal1['rotation_axis'] = CompleteDataDict['RotationAngle']
+        dictHorizontal1['max_angle'] = SubFramePath(CompleteDataDict,-1)
+        dictHorizontal1['min_angle'] = SubFramePath(CompleteDataDict,-2)
+        dictHorizontal1['angle2_increment'] = '?'
+        dictHorizontal1['max_angle2'] = '?'
+        dictHorizontal1['min_angle2'] = '?'
+
     df1 = pd.DataFrame([dictHorizontal1])
 
     # Sample data for the second row
@@ -1038,18 +1042,20 @@ def save_deposition_file(CompleteDataDict):
     "slit_width": "em_imaging_optics.energyfilter_slit_width",
     "electron_source": "em_imaging.electron_source",
     "tilt_angle_min": "em_imaging.tilt_angle_min",
-    "tilt_angle_max": "em_imaging.tilt_angle_max",
-    "pixel_spacing_x": "em_map.pixel_spacing_x",
-    "pixel_spacing_y": "em_map.pixel_spacing_y",
-    "pixel_spacing_z": "em_map.pixel_spacing_z",
-    "angle_increment": "em_tomography.axis1_angle_increment",
-    "rotation_axis": "em_tomography.dual_tilt_axis_rotation",
-    "max_angle": "em_tomography.axis1_max_angle",
-    "min_angle": "em_tomography.axis1_min_angle",
-    "angle2_increment": "em_tomography.axis2_angle_increment",
-    "max_angle2": "em_tomography.axis2_max_angle",
-    "min_angle2": "em_tomography.axis2_min_angle"
+    "tilt_angle_max": "em_imaging.tilt_angle_max"
     }
+    if args.mode == "TOMO":
+        dictHorizontal2["pixel_spacing_x"] = "em_map.pixel_spacing_x"
+        dictHorizontal2["pixel_spacing_y"] = "em_map.pixel_spacing_y"
+        dictHorizontal2["pixel_spacing_z"] = "em_map.pixel_spacing_z"
+        dictHorizontal2["angle_increment"] = "em_tomography.axis1_angle_increment"
+        dictHorizontal2["rotation_axis"] = "em_tomography.dual_tilt_axis_rotation"
+        dictHorizontal2["max_angle"] = "em_tomography.axis1_max_angle"
+        dictHorizontal2["min_angle"] = "em_tomography.axis1_min_angle"
+        dictHorizontal2["angle2_increment"] = "em_tomography.axis2_angle_increment"
+        dictHorizontal2["max_angle2"] = "em_tomography.axis2_max_angle"
+        dictHorizontal2["min_angle2"] = "em_tomography.axis2_min_angle"
+
     df2 = pd.DataFrame([dictHorizontal2])
 
     # Append the second row to the DataFrame
@@ -1097,18 +1103,19 @@ def save_deposition_file(CompleteDataDict):
         '[MicroscopeImage][microscopeData][optics][EnergyFilter][EnergySelectionSlitWidth]',
         '[MicroscopeImage][microscopeData][gun][Sourcetype]',
         '[MicroscopeImage][microscopeData][stage][Position][A]',
-        '[MicroscopeImage][microscopeData][stage][Position][B]',
-        '[PixelSpacing]',
-        '[PixelSpacing]',
-        '[PixelSpacing]',
-        '[SubFramPath]',
-        '[RotationAngle]',
-        '[SubFramePath]',
-        '[SubFramePath]',
-        '[CryoTomo is usually single axis tilt]',
-        '[CryoTomo is usually single axis tilt]',
-        '[CryoTomo is usually single axis tilt]'
+        '[MicroscopeImage][microscopeData][stage][Position][B]'
     ]
+    if args.mode == "TOMO":
+        tfs_xml_path_list.append(['[PixelSpacing]',
+                                  '[PixelSpacing]',
+                                  '[PixelSpacing]',
+                                  '[SubFramPath]',
+                                  '[RotationAngle]',
+                                  '[SubFramePath]',
+                                  '[SubFramePath]',
+                                  '[CryoTomo is usually single axis tilt]',
+                                  '[CryoTomo is usually single axis tilt]',
+                                  '[CryoTomo is usually single axis tilt]'])
 
     emdb_xml_path_list = [
         '[emd][structure_determination_list][structure_determination][microscopy_list]',
@@ -1138,18 +1145,20 @@ def save_deposition_file(CompleteDataDict):
         '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][specialist_optics][energyfilter][slith_width]',
         '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][electron_source]',
         '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][tilt_angle_min]',
-        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][tilt_angle_max]',
-        '[emd][map][pixel_spacing][x]',
-        '[emd][map][pixel_spacing][y]',
-        '[emd][map][pixel_spacing][z]',
-        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis1][angle_increment]',
-        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis_rotation]',
-        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis1][max_angle]',
-        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis1][min_angle]',
-        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis2][angle_increment]',
-        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis2][max_angle]',
-        '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis2][min_angle]'
-        ]
+        '[emd][structure_determination_list][structure_determination][microscopy_list][single_particle_microscopy][tilt_angle_max]'
+    ]
+    if args.mode == "TOMO":
+        emdb_xml_path_list.append(['[emd][map][pixel_spacing][x]',
+                                   '[emd][map][pixel_spacing][y]',
+                                   '[emd][map][pixel_spacing][z]',
+                                   '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis1][angle_increment]',
+                                   '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis_rotation]',
+                                   '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis1][max_angle]',
+                                   '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis1][min_angle]',
+                                   '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis2][angle_increment]',
+                                   '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis2][max_angle]',
+                                   '[emd][structure_determination_list][structure_determination][microscopy_list][tomgraphy_microscopy][tilt_series][axis2][min_angle]'
+                                   ])
 
     # Transpose
     df_transpose = df.T
