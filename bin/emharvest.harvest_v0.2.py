@@ -1361,6 +1361,9 @@ def translate_xml_to_cif(input_data, sessionName):
             elif category == "electron_source":
                 if cif_values[0] == "FieldEmission":
                     cif_values = ["FIELD EMISSION GUN"]
+            elif category == "illumination_mode":
+                if cif_values[0] == "PARALLEL":
+                    cif_values = ["FLOOD BEAM"]
 
             category_list.append(category)
             cif_values_list.append(cif_values)
