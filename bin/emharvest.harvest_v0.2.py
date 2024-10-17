@@ -955,6 +955,10 @@ def FoilHoleData(xmlpath: Path) -> Dict[str, Any]:
 
         if key in detector_keys:
             detectorName = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Value"]["#text"]
+            if detectorName == "BioQuantum K3":
+                detectorName = "GATAN K3 BIOQUANTUM (6k x 4k)"
+            elif detectorName == "Falcon 4i":
+                detectorName = "TFS FALCON 4i (4k x 4k)"
 
         if key == "Aperture[OBJ].Name":
             objectiveAperture = data["CustomData"]["a:KeyValueOfstringanyType"][i]["a:Value"]["#text"]
